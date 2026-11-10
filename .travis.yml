@@ -6,10 +6,25 @@ jdk:
   - openjdk8
   - openjdk11
 
+# Sealed build: Travis's preinstalled Maven 3.9.x ships maven-install-plugin 3.x,
+# which fails the `install -DskipTests` step on guava-tests ("did not assign a main file").
+before_install:
+  - curl -fsSL --retry 5 --retry-delay 10 -o /tmp/maven.tar.gz https://archive.apache.org/dist/maven/maven-3/3.6.3/binaries/apache-maven-3.6.3-bin.tar.gz
+  - tar -xzf /tmp/maven.tar.gz -C $HOME
+  - export M2_HOME=$HOME/apache-maven-3.6.3
+  - export PATH=$M2_HOME/bin:$PATH
+  - mvn -version
+
 install: mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn install -U -DskipTests=true -f $ROOT_POM
 
 # https://docs.travis-ci.com/user/common-build-problems/#build-times-out-because-no-output-was-received
-script: travis_wait 60 mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn verify -U -Dmaven.javadoc.skip=true -f $ROOT_POM
+script:
+  - travis_wait 60 mvn -B -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn verify -U -Dmaven.javadoc.skip=true -f $ROOT_POM
+  - python3 util/print_skipped_tests.py "$(dirname $ROOT_POM)"
+
+# Sealed build: keep the job open until Travis has archived this job's test summary,
+# so the log harvested right after the build finishes is complete (never changes the result).
+after_script: bash util/wait_for_travis_log.sh
 
 after_success:
   - util/deploy_snapshot.sh

@@ -1,0 +1,24 @@
+name: seal-build
+
+# Build-and-pack only: the test suite runs on Travis (.travis.yml, jdk8/jdk11 x
+# pom.xml/android/pom.xml). This job reproduces the published guava jar.
+on:
+  workflow_dispatch:
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+      - name: Package guava jar
+        run: mvn -B --no-transfer-progress package -DskipTests=true -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -Dgpg.skip=true -pl guava -am
+      - uses: actions/upload-artifact@v4
+        with:
+          name: guava-jar
+          path: guava/target/guava-28.2-jre.jar
+          if-no-files-found: error
