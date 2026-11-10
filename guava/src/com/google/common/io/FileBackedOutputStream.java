@@ -54,7 +54,6 @@ public final class FileBackedOutputStream extends OutputStream {
   private final int fileThreshold;
   private final boolean resetOnFinalize;
   private final ByteSource source;
-  @Nullable private final File parentDirectory;
 
   @GuardedBy("this")
   private OutputStream out;
@@ -102,14 +101,8 @@ public final class FileBackedOutputStream extends OutputStream {
    *     ByteSource} returned by {@link #asByteSource} is finalized.
    */
   public FileBackedOutputStream(int fileThreshold, boolean resetOnFinalize) {
-    this(fileThreshold, resetOnFinalize, null);
-  }
-
-  private FileBackedOutputStream(
-      int fileThreshold, boolean resetOnFinalize, @Nullable File parentDirectory) {
     this.fileThreshold = fileThreshold;
     this.resetOnFinalize = resetOnFinalize;
-    this.parentDirectory = parentDirectory;
     memory = new MemoryOutput();
     out = memory;
 
@@ -218,7 +211,7 @@ public final class FileBackedOutputStream extends OutputStream {
   @GuardedBy("this")
   private void update(int len) throws IOException {
     if (file == null && (memory.getCount() + len > fileThreshold)) {
-      File temp = File.createTempFile("FileBackedOutputStream", null, parentDirectory);
+      File temp = TempFileCreator.INSTANCE.createTempFile("FileBackedOutputStream");
       if (resetOnFinalize) {
         // Finalizers are not guaranteed to be called on system shutdown;
         // this is insurance.
