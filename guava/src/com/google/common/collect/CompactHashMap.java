@@ -1040,7 +1040,7 @@ class CompactHashMap<K, V> extends AbstractMap<K, V> implements Serializable {
     if (elementCount < 0) {
       throw new InvalidObjectException("Invalid size: " + elementCount);
     }
-    init(elementCount);
+    init(Math.min(elementCount, 256));
     for (int i = 0; i < elementCount; i++) {
       K key = (K) stream.readObject();
       V value = (V) stream.readObject();

@@ -582,7 +582,7 @@ class CompactHashSet<E> extends AbstractSet<E> implements Serializable {
     if (elementCount < 0) {
       throw new InvalidObjectException("Invalid size: " + elementCount);
     }
-    init(elementCount);
+    init(Math.min(elementCount, 256));
     for (int i = 0; i < elementCount; i++) {
       E element = (E) stream.readObject();
       add(element);
